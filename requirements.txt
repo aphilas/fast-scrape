@@ -1,0 +1,5 @@
+beautifulsoup4==4.10.0
+html5lib==1.1
+lxml==4.8.0
+pretty-errors==1.2.25
+requests==2.27.1
