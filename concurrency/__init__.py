@@ -1,3 +1,4 @@
+import traceback
 from concurrent import futures
 from queue import Queue
 from typing import Callable
@@ -10,7 +11,7 @@ def run(
     predicate: Callable,
     handle_result: Callable,
     workers_done: Callable,
-    timeout: int = TIMEOUT + 2,
+    timeout: int = TIMEOUT * 2,
     max_workers: int = 10,
 ):
     """Creates a thread pool to run predicate against data
@@ -51,7 +52,8 @@ def run(
             try:
                 result = done_future.result()
             except Exception as exc:
-                print("%s generated an exception %r" % (data_item, exc))
+                print(f"{data_item} generated an exception")
+                print(traceback.format_exc())
             else:
                 if data_item != "DONE":
                     # print(f"{data_item} returned {result}")

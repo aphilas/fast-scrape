@@ -3,6 +3,7 @@ import time
 import requests
 import validators
 from bs4 import BeautifulSoup
+from requests.exceptions import ConnectionError, RequestException, Timeout
 
 from . import internet
 from .constants import CONNECTION_SLEEP, QUESTIONS_PER_PAGE, SELECTORS, TIMEOUT
@@ -19,11 +20,14 @@ def load_url(url):
 
     try:
         response = requests.get(url, timeout=TIMEOUT)
-    except requests.exceptions.ConnectTimeout:
+    except (Timeout, ConnectionError):
         while not internet.on():
             print(f"No internet. Sleeping for { CONNECTION_SLEEP//60 } mins")
             time.sleep(CONNECTION_SLEEP)
-
+        return
+    except RequestException as e:
+        print(f"Error fetching {url}")
+        print(e)
         return
 
     if response.status_code == 200:
