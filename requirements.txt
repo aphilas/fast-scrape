@@ -3,3 +3,4 @@ html5lib==1.1
 lxml==4.8.0
 pretty-errors==1.2.25
 requests==2.27.1
+validators==0.18.2

@@ -1,27 +1,29 @@
 import time
 
 import requests
+import validators
 from bs4 import BeautifulSoup
 
 from . import internet
-from .constants import CONNECTION_SLEEP, SELECTORS, TIMEOUT, URL
-
-
-def generate_page_url(page_number):
-    return (
-        URL + "/homework-answers"
-        if page_number == 1
-        else f"{ URL }/homework-answers?page={ page_number }"
-    )
+from .constants import CONNECTION_SLEEP, QUESTIONS_PER_PAGE, SELECTORS, TIMEOUT
+from .utils import text_or_empty, url_or_empty
 
 
 def load_url(url):
     try:
+        if not validators.url(url, public=True):
+            print(f"{ url } invalid")
+            return
+    except validators.ValidationFailure:
+        return
+
+    try:
         response = requests.get(url, timeout=TIMEOUT)
     except requests.exceptions.ConnectTimeout:
-        if not internet.on():
-            print(f"No internet. Sleeping for { CONNECTION_SLEEP//60 } minutes")
+        while not internet.on():
+            print(f"No internet. Sleeping for { CONNECTION_SLEEP//60 } mins")
             time.sleep(CONNECTION_SLEEP)
+
         return
 
     if response.status_code == 200:
@@ -44,6 +46,7 @@ def scrape_question(question_url):
         str(
             soup.select_one(SELECTORS["content"])
             or soup.select_one(SELECTORS["content_alt"])
+            or ""
         ).replace("\n", "")
         if soup
         else ""
@@ -58,12 +61,12 @@ def scrape_page(page_url):
     return (
         [
             {
-                "topic": el.select_one(SELECTORS["topic"]).text,
-                "title": el.select_one(SELECTORS["title"]).text,
-                "url": URL + el.select_one(SELECTORS["url"]).get("href", ""),
+                "topic": text_or_empty(el, SELECTORS["topic"]),
+                "title": text_or_empty(el, SELECTORS["title"]),
+                "url": url_or_empty(el, SELECTORS["url"]),
             }
             for (i, el) in enumerate(soup.select(SELECTORS["questions"]))
-            if i < 50
+            if i < QUESTIONS_PER_PAGE
         ]
         if soup
         else []

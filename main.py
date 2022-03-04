@@ -11,7 +11,8 @@ import pretty_errors
 from concurrency import run
 from file import create_path, save_header, save_question
 from scrape.constants import NO_OF_PAGES, URL
-from scrape.scrapers import generate_page_url, scrape_page, scrape_question
+from scrape.scrapers import scrape_page, scrape_question
+from scrape.utils import generate_page_url
 
 pretty_errors.configure()
 pp = pprint.PrettyPrinter(indent=2)
@@ -51,9 +52,11 @@ def handle_result(url, value):
             partial_questions[question_url] = question
             url_queue.put(question_url)
 
+        # !check for off-by-one error
         if CURRENT_PAGE < STOP_PAGE:
-            url_queue.put(generate_page_url(CURRENT_PAGE))
+            url_queue.put(generate_page_url(CURRENT_PAGE + 1))
 
+        if CURRENT_PAGE <= STOP_PAGE:
             with page_lock:
                 CURRENT_PAGE += 1  # not thread-safe
 
@@ -61,16 +64,19 @@ def handle_result(url, value):
     elif isinstance(value, str):
         question = partial_questions.get(url)
 
-        if question:
+        if question and value:
             question["content"] = value
             del partial_questions[url]
 
             print(
-                f"{datetime.datetime.now().strftime('[%H:%M]')} {CURRENT_PAGE}: {question['url'].replace(URL, '', 1)}"
+                f"{datetime.datetime.now().strftime('[%H:%M]')} {CURRENT_PAGE - 1} {question['url'].replace(URL, '', 1)}"
             )
 
             with file_lock:
                 save_question(FILE_HANDLER, question)  # not thread-safe
+        elif question:
+            # question content is empty
+            del partial_questions[url]
 
 
 def done():
