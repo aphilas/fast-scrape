@@ -1,6 +1,6 @@
 # fast-scrape
 
-Scrape [sweetstudy.com](https://sweetstudy.com) fast using `requests`, `lxml` and a thread pool.
+Scrape a static website fast using `requests`, `lxml` and a thread pool.
 
 ## Usage
 ```bash
