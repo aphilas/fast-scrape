@@ -20,6 +20,7 @@ def run(
         data_queue (queue.Queue): A queue for data items
         predicate (typing.Callable): The function to call against a data item
         handle_result (typing.Callable): handle_result(data_item, result) is called on Future completion
+        workers_done(typing.Callable): Called when all workers are done
         timeout (int, optional): Predicate timeout. Defaults to 10.
         max_workers (int, optional): Maximum threads. Defaults to 5.
     """
@@ -41,26 +42,23 @@ def run(
                 workers, timeout=timeout, return_when=futures.FIRST_COMPLETED
             )
 
-            if done and len(done):
-                done_future = list(done)[0]
-            else:
+            # no worker is done
+            if not done or not len(done):
                 continue
 
-            # collect done result, remove from workers
+            # get done worker
+            done_future = list(done)[0]
             data_item = workers[done_future]
 
+            # collect worker result
             try:
                 result = done_future.result()
-            except Exception as exc:
+                handle_result(data_item, result)
+            except Exception:
                 print(f"{data_item} generated an exception")
                 print(traceback.format_exc())
-            else:
-                if data_item != "DONE":
-                    # print(f"{data_item} returned {result}")
-                    handle_result(data_item, result)
-                else:
-                    print(result)
 
+            # remove from workers
             del workers[done_future]
 
             # schedule all data_items currently in queue

@@ -21,7 +21,7 @@ url_queue = queue.Queue()
 page_lock = threading.Lock()
 file_lock = threading.Lock()
 
-# warning: global vars
+# !global vars
 FILE_HANDLER = None
 CURRENT_PAGE = 0
 STOP_PAGE = 1
@@ -37,7 +37,7 @@ def process_url(url: str):
 
 partial_questions = dict()
 
-
+# TODO: use partials instead of global vars
 def handle_result(url, value):
     global CURRENT_PAGE
 
